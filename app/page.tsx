@@ -19,6 +19,7 @@ export async function generateMetadata(): Promise<Metadata> {
     description,
     alternates: { canonical: siteConfig.url },
     openGraph: { title, description, url: siteConfig.url, locale: "es_AR" },
+    twitter: { card: "summary_large_image", title, description },
   };
 }
 
