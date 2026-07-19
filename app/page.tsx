@@ -91,7 +91,14 @@ export default async function Home() {
         {jsonLd ? (
           <script
             type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            dangerouslySetInnerHTML={{
+              // Escape <, >, & so a rogue holiday name like "foo</script><script>..."
+              // from the upstream API cannot break out of the JSON-LD script block.
+              __html: JSON.stringify(jsonLd)
+                .replace(/</g, "\\u003c")
+                .replace(/>/g, "\\u003e")
+                .replace(/&/g, "\\u0026"),
+            }}
           />
         ) : null}
       </main>

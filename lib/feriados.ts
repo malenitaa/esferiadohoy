@@ -1,5 +1,6 @@
 const ARGENTINA_TIMEZONE = "America/Argentina/Buenos_Aires";
 const ARGENTINADATOS_BASE_URL = "https://api.argentinadatos.com/v1/feriados";
+const FETCH_TIMEOUT_MS = 8_000;
 
 // Cada tanto la fuente publica el decreto del año siguiente; refrescar 1 vez por día alcanza.
 const REVALIDATE_SECONDS = 60 * 60 * 24;
@@ -13,6 +14,21 @@ export interface Feriado {
 }
 
 export class FeriadosFetchError extends Error {}
+
+const VALID_TIPOS: readonly TipoFeriado[] = ["inamovible", "trasladable", "puente"];
+
+function isValidFeriado(item: unknown): item is Feriado {
+  if (typeof item !== "object" || item === null) return false;
+  const f = item as Record<string, unknown>;
+  return (
+    typeof f.fecha === "string" &&
+    /^\d{4}-\d{2}-\d{2}$/.test(f.fecha) &&
+    typeof f.nombre === "string" &&
+    f.nombre.length > 0 &&
+    f.nombre.length <= 300 &&
+    VALID_TIPOS.includes(f.tipo as TipoFeriado)
+  );
+}
 
 /** Fecha de hoy en horario de Argentina, como YYYY-MM-DD (evita corrimientos por UTC). */
 export function getArgentinaTodayISO(): string {
@@ -35,28 +51,38 @@ export function getArgentinaMonth(todayISO: string): number {
 
 async function fetchFeriadosForYear(year: number): Promise<Feriado[]> {
   let response: Response;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
     response = await fetch(`${ARGENTINADATOS_BASE_URL}/${year}`, {
       next: { revalidate: REVALIDATE_SECONDS },
+      signal: controller.signal,
     });
   } catch {
     throw new FeriadosFetchError(
-      `No se pudo conectar con la API de feriados para ${year}.`
+      `No se pudo conectar con la fuente de feriados. Probá de nuevo en un rato.`
     );
+  } finally {
+    clearTimeout(timer);
   }
 
   if (!response.ok) {
     throw new FeriadosFetchError(
-      `La API de feriados respondió con error (${response.status}) para ${year}.`
+      `No pudimos obtener los feriados. Probá de nuevo en un rato.`
     );
   }
 
-  const data = await response.json();
+  const data: unknown = await response.json();
   if (!Array.isArray(data)) {
-    throw new FeriadosFetchError("La API de feriados devolvió un formato inesperado.");
+    throw new FeriadosFetchError("La fuente de feriados devolvió un formato inesperado.");
   }
 
-  return data as Feriado[];
+  const valid = data.filter(isValidFeriado);
+  if (valid.length === 0 && data.length > 0) {
+    throw new FeriadosFetchError("La fuente de feriados devolvió un formato inesperado.");
+  }
+
+  return valid;
 }
 
 /**

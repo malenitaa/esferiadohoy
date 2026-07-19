@@ -10,10 +10,12 @@ export async function GET() {
     const feriados = await getFeriadosDelPeriodoActual();
     return NextResponse.json({ todayISO: getArgentinaTodayISO(), feriados });
   } catch (error) {
-    const message =
-      error instanceof FeriadosFetchError
-        ? error.message
-        : "No pudimos cargar los feriados, probá de nuevo en un rato.";
-    return NextResponse.json({ error: message }, { status: 502 });
+    if (!(error instanceof FeriadosFetchError)) {
+      console.error("[feriados] unexpected error:", error);
+    }
+    return NextResponse.json(
+      { error: "No pudimos cargar los feriados, probá de nuevo en un rato." },
+      { status: 502 },
+    );
   }
 }
