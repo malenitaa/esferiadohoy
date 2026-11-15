@@ -1,10 +1,30 @@
 import { ImageResponse } from "next/og";
 import { connection } from "next/server";
-import { FeriadosFetchError, analizarHoy, respuestaDeHoy, type RespuestaDeHoy } from "@/lib/feriados";
+import {
+  FeriadosFetchError,
+  analizarHoy,
+  respuestaDeHoy,
+  segundosDeCacheHastaMedianoche,
+  type RespuestaDeHoy,
+} from "@/lib/feriados";
 
 export const alt = "¿Hoy es feriado en Argentina?";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
+
+// Con más de 120 caracteres el subtítulo no entra debajo de la respuesta en 630 px de alto.
+const MAX_SUBTITULO = 120;
+
+// next/og baja de jsdelivr o de Google Fonts los emojis y los alfabetos que su fuente no trae. El
+// nombre viene de la API externa: sin esto, la fuente decide a qué hosts sale el servidor.
+const FUERA_DE_LATIN = /[^\u0020-\u024F]/g;
+
+function prepararSubtitulo(texto: string): string {
+  const limpio = texto.replace(FUERA_DE_LATIN, "").replace(/\s+/g, " ").trim();
+  return limpio.length <= MAX_SUBTITULO
+    ? limpio
+    : `${limpio.slice(0, MAX_SUBTITULO - 1).trimEnd()}…`;
+}
 
 const TEXTO = { si: "SÍ", no: "NO", "no-laborable": "NO LABORABLE" } as const;
 const COLOR = { si: "#10b981", no: "#262626", "no-laborable": "#d97706" } as const;
@@ -72,11 +92,15 @@ export default async function Image() {
               textAlign: "center",
             }}
           >
-            {subtitulo}
+            {prepararSubtitulo(subtitulo)}
           </div>
         ) : null}
       </div>
     ),
-    { ...size }
+    {
+      ...size,
+      // La CDN sirve la imagen hasta la medianoche argentina: no gasta una función por request.
+      headers: { "Cache-Control": `public, s-maxage=${segundosDeCacheHastaMedianoche()}` },
+    }
   );
 }

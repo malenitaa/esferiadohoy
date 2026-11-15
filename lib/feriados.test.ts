@@ -62,6 +62,48 @@ describe("getFeriadosDelPeriodoActual", () => {
     await expect(getFeriadosDelPeriodoActual()).rejects.toBeInstanceOf(FeriadosFetchError);
   });
 
+  it("descarta ítems mal formados y se queda con los buenos", async () => {
+    vi.setSystemTime(new Date("2030-11-10T15:00:00-03:00"));
+    vi.stubGlobal("fetch", async () =>
+      Response.json([
+        ...FERIADOS_2030,
+        { fecha: "25/12/2030", tipo: "inamovible", nombre: "Fecha en otro formato" },
+        { fecha: "2030-10-12", tipo: "provincial", nombre: "Tipo desconocido" },
+        { fecha: "2030-10-13", tipo: "inamovible", nombre: "" },
+        { fecha: "2030-10-14", tipo: "inamovible", nombre: "x".repeat(301) },
+        null,
+        "texto suelto",
+      ])
+    );
+
+    const feriados = await getFeriadosDelPeriodoActual();
+
+    expect(feriados.map((f) => f.fecha)).toEqual(["2030-12-08", "2030-12-25"]);
+  });
+
+  it("si todos los ítems son inválidos, es un error de formato", async () => {
+    vi.setSystemTime(new Date("2030-11-10T15:00:00-03:00"));
+    vi.stubGlobal("fetch", async () => Response.json([{ fecha: "mal" }]));
+
+    await expect(getFeriadosDelPeriodoActual()).rejects.toThrow("formato inesperado");
+  });
+
+  it("si la API responde algo que no es un array, es un error de formato", async () => {
+    vi.setSystemTime(new Date("2030-11-10T15:00:00-03:00"));
+    vi.stubGlobal("fetch", async () => Response.json({ error: "rate limit" }));
+
+    await expect(getFeriadosDelPeriodoActual()).rejects.toBeInstanceOf(FeriadosFetchError);
+  });
+
+  it("si no hay red, es un FeriadosFetchError", async () => {
+    vi.setSystemTime(new Date("2030-11-10T15:00:00-03:00"));
+    vi.stubGlobal("fetch", async () => {
+      throw new TypeError("fetch failed");
+    });
+
+    await expect(getFeriadosDelPeriodoActual()).rejects.toBeInstanceOf(FeriadosFetchError);
+  });
+
   it("fuera de diciembre pide solo el año actual", async () => {
     vi.setSystemTime(new Date("2030-11-10T15:00:00-03:00"));
     const fetchMock = stubApi({ 2030: FERIADOS_2030 });

@@ -22,9 +22,10 @@ Funciona igual en el celular que en la computadora.
 No, no hay cuentas, ni login, ni nada parecido.
 
 **¿Manda mis datos a algún lado?**
-No. El sitio no pide ni guarda ningún dato tuyo — ni siquiera sabe que
-entraste. Solo consulta una fuente pública de feriados para mostrarte la
-respuesta.
+No. El sitio no pide ni guarda ningún dato tuyo: no usa cookies, analítica
+ni rastreadores, y no carga nada de otros sitios en tu navegador. Como
+cualquier página web, el hosting (Vercel) registra los accesos. Para
+responderte, el servidor solo consulta una fuente pública de feriados.
 
 **¿De dónde sale la información?**
 De [ArgentinaDatos](https://argentinadatos.com/docs/operations/get-feriados),
@@ -36,7 +37,7 @@ Sí, y no tiene publicidad ni ningún costo oculto.
 
 ## Para desarrolladores
 
-Requisitos: [Node.js](https://nodejs.org/) 20+.
+Requisitos: [Node.js](https://nodejs.org/) 22+.
 
 ```bash
 git clone https://github.com/malenitaa/esferiadohoy.git
@@ -45,7 +46,11 @@ npm install
 npm run dev
 ```
 
-Abrí [http://localhost:3000](http://localhost:3000).
+Abrí [http://localhost:3000](http://localhost:3000). Para correr los tests,
+`npm test`.
+
+Las decisiones de diseño están en [`docs/adr/`](docs/adr/INDICE.md) y cómo
+reportar un problema de seguridad, en [SECURITY.md](SECURITY.md).
 
 ## ¿Te sirvió?
 
