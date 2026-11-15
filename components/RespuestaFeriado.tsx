@@ -1,4 +1,13 @@
-import type { AnalisisFeriados } from "@/lib/feriados";
+import { ACLARACION_NO_LABORABLE, respuestaDeHoy, type AnalisisFeriados } from "@/lib/feriados";
+
+const TEXTO = { si: "SÍ", no: "NO", "no-laborable": "NO LABORABLE" } as const;
+
+const ESTILO = {
+  si: "text-8xl sm:text-9xl text-emerald-500",
+  no: "text-8xl sm:text-9xl text-neutral-800 dark:text-neutral-100",
+  // Más chico para que entre en una línea en un celular de 375 px, y en ámbar: no es ni el SÍ ni el NO.
+  "no-laborable": "text-4xl sm:text-5xl text-amber-600 dark:text-amber-400",
+} as const;
 
 function formatearFecha(fecha: string) {
   const [, month, day] = fecha.split("-").map(Number);
@@ -11,21 +20,20 @@ function formatearFecha(fecha: string) {
 
 export function RespuestaFeriado({ analisis }: { analisis: AnalisisFeriados }) {
   const { feriadoDeHoy, proximoFeriado, diasHastaProximo } = analisis;
-  const esFeriado = Boolean(feriadoDeHoy);
+  const respuesta = respuestaDeHoy(analisis);
 
   return (
     <div className="flex flex-col items-center gap-4 text-center">
-      <p
-        className={`text-8xl font-black tracking-tight sm:text-9xl ${
-          esFeriado ? "text-emerald-500" : "text-neutral-800 dark:text-neutral-100"
-        }`}
-      >
-        {esFeriado ? "SÍ" : "NO"}
-      </p>
+      <p className={`font-black tracking-tight ${ESTILO[respuesta]}`}>{TEXTO[respuesta]}</p>
 
-      {esFeriado && feriadoDeHoy ? (
+      {feriadoDeHoy ? (
         <p className="text-xl text-neutral-600 dark:text-neutral-300 sm:text-2xl">
           Hoy es <span className="font-semibold">{feriadoDeHoy.nombre}</span>
+          {respuesta === "no-laborable" ? (
+            <span className="mt-1 block text-base text-neutral-400 dark:text-neutral-500">
+              {ACLARACION_NO_LABORABLE}
+            </span>
+          ) : null}
         </p>
       ) : proximoFeriado && diasHastaProximo !== null ? (
         <p className="text-xl text-neutral-600 dark:text-neutral-300 sm:text-2xl">

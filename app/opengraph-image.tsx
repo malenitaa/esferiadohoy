@@ -1,21 +1,26 @@
 import { ImageResponse } from "next/og";
 import { connection } from "next/server";
-import { FeriadosFetchError, analizarHoy } from "@/lib/feriados";
+import { FeriadosFetchError, analizarHoy, respuestaDeHoy, type RespuestaDeHoy } from "@/lib/feriados";
 
 export const alt = "¿Hoy es feriado en Argentina?";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
+const TEXTO = { si: "SÍ", no: "NO", "no-laborable": "NO LABORABLE" } as const;
+const COLOR = { si: "#10b981", no: "#262626", "no-laborable": "#d97706" } as const;
+// "NO LABORABLE" a 260 px no entra en 1200 px de ancho.
+const TAMANIO = { si: 260, no: 260, "no-laborable": 120 } as const;
+
 export default async function Image() {
   // Igual que la página: la imagen se arma por request para que "hoy" sea hoy.
   await connection();
 
-  let esFeriado = false;
+  let respuesta: RespuestaDeHoy = "no";
   let subtitulo = "";
 
   try {
     const analisis = await analizarHoy();
-    esFeriado = Boolean(analisis.feriadoDeHoy);
+    respuesta = respuestaDeHoy(analisis);
 
     if (analisis.feriadoDeHoy) {
       subtitulo = analisis.feriadoDeHoy.nombre;
@@ -47,14 +52,14 @@ export default async function Image() {
         <div
           style={{
             display: "flex",
-            fontSize: 260,
+            fontSize: TAMANIO[respuesta],
             fontWeight: 900,
-            color: esFeriado ? "#10b981" : "#262626",
+            color: COLOR[respuesta],
             lineHeight: 1,
             marginTop: 8,
           }}
         >
-          {esFeriado ? "SÍ" : "NO"}
+          {TEXTO[respuesta]}
         </div>
         {subtitulo ? (
           <div
