@@ -88,16 +88,21 @@ async function fetchFeriadosForYear(year: number): Promise<Feriado[]> {
 /**
  * Trae los feriados del año actual (hora Argentina). En diciembre también trae el
  * año siguiente, para poder calcular bien el "próximo feriado" al cruzar de año.
+ * Si el año siguiente todavía no está publicado (o falla), se sigue con el actual.
  */
 export async function getFeriadosDelPeriodoActual(): Promise<Feriado[]> {
   const todayISO = getArgentinaTodayISO();
   const year = getArgentinaYear(todayISO);
   const month = getArgentinaMonth(todayISO);
 
-  const years = month === 12 ? [year, year + 1] : [year];
-  const results = await Promise.all(years.map(fetchFeriadosForYear));
+  const [actual, siguiente] = await Promise.allSettled([
+    fetchFeriadosForYear(year),
+    month === 12 ? fetchFeriadosForYear(year + 1) : Promise.resolve([]),
+  ]);
+  if (actual.status === "rejected") throw actual.reason;
 
-  return results.flat().sort((a, b) => a.fecha.localeCompare(b.fecha));
+  const feriados = siguiente.status === "fulfilled" ? [...actual.value, ...siguiente.value] : actual.value;
+  return feriados.sort((a, b) => a.fecha.localeCompare(b.fecha));
 }
 
 function diasEntre(desdeISO: string, hastaISO: string): number {
