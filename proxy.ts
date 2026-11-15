@@ -36,8 +36,9 @@ export const config = {
   matcher: [
     {
       // Solo páginas HTML: la API, los estáticos y las imágenes e índices generados no la necesitan.
+      // Anclado: /apiario o /iconos son páginas (404) y sí llevan CSP.
       source:
-        "/((?!api|_next/static|_next/image|favicon.ico|icon|apple-icon|opengraph-image|robots.txt|sitemap.xml).*)",
+        "/((?!(?:api|_next/static|_next/image)(?:/|$)|(?:icon|apple-icon|opengraph-image|robots\\.txt|sitemap\\.xml)$).*)",
       missing: [
         { type: "header", key: "next-router-prefetch" },
         { type: "header", key: "purpose", value: "prefetch" },

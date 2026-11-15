@@ -27,7 +27,7 @@ export function RespuestaFeriado({ analisis }: { analisis: AnalisisFeriados }) {
       <p className={`font-black tracking-tight ${ESTILO[respuesta]}`}>{TEXTO[respuesta]}</p>
 
       {feriadoDeHoy ? (
-        <p className="text-xl text-neutral-600 dark:text-neutral-300 sm:text-2xl">
+        <p className="break-words text-xl text-neutral-600 dark:text-neutral-300 sm:text-2xl">
           Hoy es <span className="font-semibold">{feriadoDeHoy.nombre}</span>
           {respuesta === "no-laborable" ? (
             <span className="mt-1 block text-base text-neutral-400 dark:text-neutral-500">
@@ -36,7 +36,7 @@ export function RespuestaFeriado({ analisis }: { analisis: AnalisisFeriados }) {
           ) : null}
         </p>
       ) : proximoFeriado && diasHastaProximo !== null ? (
-        <p className="text-xl text-neutral-600 dark:text-neutral-300 sm:text-2xl">
+        <p className="break-words text-xl text-neutral-600 dark:text-neutral-300 sm:text-2xl">
           Faltan{" "}
           <span className="font-semibold">
             {diasHastaProximo} {diasHastaProximo === 1 ? "día" : "días"}
@@ -48,7 +48,7 @@ export function RespuestaFeriado({ analisis }: { analisis: AnalisisFeriados }) {
           </span>
         </p>
       ) : (
-        <p className="text-xl text-neutral-600 dark:text-neutral-300 sm:text-2xl">
+        <p className="break-words text-xl text-neutral-600 dark:text-neutral-300 sm:text-2xl">
           No hay más feriados cargados por ahora.
         </p>
       )}

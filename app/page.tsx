@@ -59,7 +59,7 @@ export default async function Home() {
                 ? `Hoy es día no laborable: ${analisis.feriadoDeHoy.nombre}. ${ACLARACION_NO_LABORABLE}`
                 : `Sí, hoy es ${analisis.feriadoDeHoy.nombre}.`
               : analisis.proximoFeriado
-              ? `No. Faltan ${analisis.diasHastaProximo} días para el próximo feriado: ${analisis.proximoFeriado.nombre}.`
+              ? `No. Faltan ${analisis.diasHastaProximo} ${analisis.diasHastaProximo === 1 ? "día" : "días"} para el próximo feriado: ${analisis.proximoFeriado.nombre}.`
               : "No hay más feriados cargados por ahora.",
           },
         },

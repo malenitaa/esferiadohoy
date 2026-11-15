@@ -17,17 +17,34 @@ export class FeriadosFetchError extends Error {}
 
 const VALID_TIPOS: readonly TipoFeriado[] = ["inamovible", "trasladable", "puente"];
 
-function isValidFeriado(item: unknown): item is Feriado {
-  if (typeof item !== "object" || item === null) return false;
+// Caracteres de control y de dirección (override RTL y similares): no tienen nada que hacer en el
+// nombre de un feriado y pueden desordenar cómo se ve el texto.
+const CARACTERES_INVISIBLES = /[\u0000-\u001F\u007F-\u009F\u200E\u200F\u202A-\u202E\u2066-\u2069]/g;
+
+/** true si "YYYY-MM-DD" existe en el calendario (descarta 2026-02-30 o 2026-13-01). */
+function esFechaReal(fecha: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) return false;
+  const [year, month, day] = fecha.split("-").map(Number);
+  const d = new Date(Date.UTC(year, month - 1, day));
+  return d.getUTCFullYear() === year && d.getUTCMonth() === month - 1 && d.getUTCDate() === day;
+}
+
+/**
+ * Valida un ítem de la API y limpia su nombre. Devuelve null si no sirve: fecha que no existe o
+ * de otro año que el pedido, tipo desconocido, nombre vacío o de más de 300 caracteres.
+ */
+function parseFeriado(item: unknown, year: number): Feriado | null {
+  if (typeof item !== "object" || item === null) return null;
   const f = item as Record<string, unknown>;
-  return (
-    typeof f.fecha === "string" &&
-    /^\d{4}-\d{2}-\d{2}$/.test(f.fecha) &&
-    typeof f.nombre === "string" &&
-    f.nombre.length > 0 &&
-    f.nombre.length <= 300 &&
-    VALID_TIPOS.includes(f.tipo as TipoFeriado)
-  );
+  if (typeof f.fecha !== "string" || !esFechaReal(f.fecha) || !f.fecha.startsWith(`${year}-`)) {
+    return null;
+  }
+  if (!VALID_TIPOS.includes(f.tipo as TipoFeriado) || typeof f.nombre !== "string") return null;
+
+  const nombre = f.nombre.replace(CARACTERES_INVISIBLES, " ").replace(/\s+/g, " ").trim();
+  if (nombre.length === 0 || nombre.length > 300) return null;
+
+  return { fecha: f.fecha, tipo: f.tipo as TipoFeriado, nombre };
 }
 
 /** Fecha de hoy en horario de Argentina, como YYYY-MM-DD (evita corrimientos por UTC). */
@@ -41,6 +58,23 @@ export function getArgentinaTodayISO(): string {
   return formatter.format(new Date());
 }
 
+/**
+ * Cuánto puede cachear la CDN algo que depende de "hoy": hasta la medianoche argentina, con un
+ * tope de una hora. Así una respuesta nunca cruza de un día al otro.
+ */
+export function segundosDeCacheHastaMedianoche(ahora: Date = new Date()): number {
+  const partes = new Intl.DateTimeFormat("en-GB", {
+    timeZone: ARGENTINA_TIMEZONE,
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(ahora);
+  const valor = (tipo: string) => Number(partes.find((p) => p.type === tipo)?.value ?? 0);
+  const transcurridos = valor("hour") * 3600 + valor("minute") * 60 + valor("second");
+  return Math.max(0, Math.min(3600, 86_400 - transcurridos));
+}
+
 export function getArgentinaYear(todayISO: string): number {
   return Number(todayISO.slice(0, 4));
 }
@@ -50,34 +84,47 @@ export function getArgentinaMonth(todayISO: string): number {
 }
 
 async function fetchFeriadosForYear(year: number): Promise<Feriado[]> {
-  let response: Response;
   const controller = new AbortController();
+  // El timeout cubre también la lectura del body: una respuesta que manda los headers y después
+  // se cuelga no puede trabar la página.
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+  let data: unknown;
   try {
-    response = await fetch(`${ARGENTINADATOS_BASE_URL}/${year}`, {
-      next: { revalidate: REVALIDATE_SECONDS },
-      signal: controller.signal,
-    });
-  } catch {
-    throw new FeriadosFetchError(
-      `No se pudo conectar con la fuente de feriados. Probá de nuevo en un rato.`
-    );
+    let response: Response;
+    try {
+      response = await fetch(`${ARGENTINADATOS_BASE_URL}/${year}`, {
+        next: { revalidate: REVALIDATE_SECONDS },
+        signal: controller.signal,
+      });
+    } catch {
+      throw new FeriadosFetchError(
+        `No se pudo conectar con la fuente de feriados. Probá de nuevo en un rato.`
+      );
+    }
+
+    if (!response.ok) {
+      throw new FeriadosFetchError(
+        `No pudimos obtener los feriados. Probá de nuevo en un rato.`
+      );
+    }
+
+    try {
+      data = await response.json();
+    } catch {
+      // HTML de error con status 200, JSON cortado o body que no terminó a tiempo.
+      throw new FeriadosFetchError("La fuente de feriados devolvió un formato inesperado.");
+    }
   } finally {
     clearTimeout(timer);
   }
 
-  if (!response.ok) {
-    throw new FeriadosFetchError(
-      `No pudimos obtener los feriados. Probá de nuevo en un rato.`
-    );
-  }
-
-  const data: unknown = await response.json();
   if (!Array.isArray(data)) {
     throw new FeriadosFetchError("La fuente de feriados devolvió un formato inesperado.");
   }
 
-  const valid = data.filter(isValidFeriado);
+  const valid = data
+    .map((item) => parseFeriado(item, year))
+    .filter((f): f is Feriado => f !== null);
   if (valid.length === 0 && data.length > 0) {
     throw new FeriadosFetchError("La fuente de feriados devolvió un formato inesperado.");
   }
@@ -101,6 +148,11 @@ export async function getFeriadosDelPeriodoActual(
     month === 12 ? fetchFeriadosForYear(year + 1) : Promise.resolve([]),
   ]);
   if (actual.status === "rejected") throw actual.reason;
+  // Un año sin feriados no existe: una lista vacía es la fuente fallando, no un dato. Sin esto la
+  // página respondería "NO" también un día que es feriado.
+  if (actual.value.length === 0) {
+    throw new FeriadosFetchError("La fuente de feriados no tiene datos para este año.");
+  }
 
   const feriados = siguiente.status === "fulfilled" ? [...actual.value, ...siguiente.value] : actual.value;
   return feriados.sort((a, b) => a.fecha.localeCompare(b.fecha));
@@ -144,7 +196,9 @@ export const ACLARACION_NO_LABORABLE =
 
 export function analizarFeriados(feriados: Feriado[], todayISO: string): AnalisisFeriados {
   const feriadosOrdenados = [...feriados].sort((a, b) => a.fecha.localeCompare(b.fecha));
-  const feriadoDeHoy = feriadosOrdenados.find((f) => f.fecha === todayISO) ?? null;
+  // Si un feriado y un puente cayeran el mismo día, gana el feriado: es la respuesta más fuerte.
+  const deHoy = feriadosOrdenados.filter((f) => f.fecha === todayISO);
+  const feriadoDeHoy = deHoy.find((f) => f.tipo !== "puente") ?? deHoy[0] ?? null;
   const proximoFeriado = feriadosOrdenados.find((f) => f.fecha > todayISO) ?? null;
   const diasHastaProximo = proximoFeriado ? diasEntre(todayISO, proximoFeriado.fecha) : null;
 

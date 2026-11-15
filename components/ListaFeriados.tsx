@@ -67,7 +67,7 @@ export function ListaFeriados({ analisis }: { analisis: AnalisisFeriados }) {
         <ul className="divide-y divide-neutral-100 dark:divide-neutral-800">
           {desdeHoy.map((feriado) => (
             <FeriadoItem
-              key={feriado.fecha}
+              key={`${feriado.fecha}-${feriado.nombre}`}
               feriado={feriado}
               todayISO={todayISO}
               proximoFeriado={proximoFeriado}
@@ -89,7 +89,7 @@ export function ListaFeriados({ analisis }: { analisis: AnalisisFeriados }) {
           <ul className="divide-y divide-neutral-100 dark:divide-neutral-800">
             {pasados.map((feriado) => (
               <FeriadoItem
-                key={feriado.fecha}
+                key={`${feriado.fecha}-${feriado.nombre}`}
                 feriado={feriado}
                 todayISO={todayISO}
                 proximoFeriado={proximoFeriado}
