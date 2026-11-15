@@ -28,6 +28,7 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
+      - run: npm test
       - run: npm run build
       # Corta con high o critical en dependencias de producción. Las moderadas y las de
       # desarrollo no frenan el PR: llegan por Dependabot.
