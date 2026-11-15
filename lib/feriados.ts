@@ -90,8 +90,9 @@ async function fetchFeriadosForYear(year: number): Promise<Feriado[]> {
  * año siguiente, para poder calcular bien el "próximo feriado" al cruzar de año.
  * Si el año siguiente todavía no está publicado (o falla), se sigue con el actual.
  */
-export async function getFeriadosDelPeriodoActual(): Promise<Feriado[]> {
-  const todayISO = getArgentinaTodayISO();
+export async function getFeriadosDelPeriodoActual(
+  todayISO: string = getArgentinaTodayISO()
+): Promise<Feriado[]> {
   const year = getArgentinaYear(todayISO);
   const month = getArgentinaMonth(todayISO);
 
@@ -134,4 +135,11 @@ export function analizarFeriados(feriados: Feriado[], todayISO: string): Analisi
   const diasHastaProximo = proximoFeriado ? diasEntre(todayISO, proximoFeriado.fecha) : null;
 
   return { todayISO, feriadoDeHoy, proximoFeriado, diasHastaProximo, feriadosOrdenados };
+}
+
+/** La respuesta para hoy (hora Argentina), leyendo el reloj una sola vez. */
+export async function analizarHoy(): Promise<AnalisisFeriados> {
+  const todayISO = getArgentinaTodayISO();
+  const feriados = await getFeriadosDelPeriodoActual(todayISO);
+  return analizarFeriados(feriados, todayISO);
 }

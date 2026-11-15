@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { FeriadosFetchError, getFeriadosDelPeriodoActual, type Feriado } from "./feriados";
+import {
+  FeriadosFetchError,
+  analizarHoy,
+  getFeriadosDelPeriodoActual,
+  type Feriado,
+} from "./feriados";
 
 const FERIADOS_2030: Feriado[] = [
   { fecha: "2030-12-25", tipo: "inamovible", nombre: "Navidad" },
@@ -65,5 +70,39 @@ describe("getFeriadosDelPeriodoActual", () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock.mock.calls[0][0]).toMatch(/\/2030$/);
+  });
+});
+
+describe("analizarHoy", () => {
+  const FERIADOS_2026: Feriado[] = [
+    { fecha: "2026-05-25", tipo: "inamovible", nombre: "Día de la Revolución de Mayo" },
+    { fecha: "2026-06-20", tipo: "inamovible", nombre: "Paso a la Inmortalidad del General Manuel Belgrano" },
+  ];
+
+  it("con el fetch cacheado, cada día da su respuesta al cruzar la medianoche argentina", async () => {
+    // Simula el Data Cache de Next: la API se consulta una vez y después se sirve la copia.
+    const api = stubApi({ 2026: FERIADOS_2026 });
+    const cache = new Map<string, string>();
+    vi.stubGlobal("fetch", async (url: string) => {
+      if (!cache.has(url)) cache.set(url, await (await api(url)).text());
+      return new Response(cache.get(url), { status: 200 });
+    });
+
+    // 24/05 23:30 en Argentina (02:30 UTC del 25).
+    vi.setSystemTime(new Date("2026-05-25T02:30:00Z"));
+    const ayer = await analizarHoy();
+
+    // Una hora después ya es 25/05 en Argentina.
+    vi.setSystemTime(new Date("2026-05-25T03:30:00Z"));
+    const hoy = await analizarHoy();
+
+    expect(api).toHaveBeenCalledTimes(1);
+    expect(ayer.todayISO).toBe("2026-05-24");
+    expect(ayer.feriadoDeHoy).toBeNull();
+    expect(ayer.proximoFeriado?.fecha).toBe("2026-05-25");
+    expect(ayer.diasHastaProximo).toBe(1);
+    expect(hoy.todayISO).toBe("2026-05-25");
+    expect(hoy.feriadoDeHoy?.nombre).toBe("Día de la Revolución de Mayo");
+    expect(hoy.proximoFeriado?.fecha).toBe("2026-06-20");
   });
 });
