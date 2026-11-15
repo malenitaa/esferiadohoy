@@ -128,6 +128,20 @@ export interface AnalisisFeriados {
   feriadosOrdenados: Feriado[];
 }
 
+/**
+ * Qué responde la página a "¿hoy es feriado?". Los días "puente" (no laborables con
+ * fines turísticos) tienen respuesta propia: son optativos para el sector privado.
+ */
+export type RespuestaDeHoy = "si" | "no" | "no-laborable";
+
+export function respuestaDeHoy({ feriadoDeHoy }: Pick<AnalisisFeriados, "feriadoDeHoy">): RespuestaDeHoy {
+  if (!feriadoDeHoy) return "no";
+  return feriadoDeHoy.tipo === "puente" ? "no-laborable" : "si";
+}
+
+export const ACLARACION_NO_LABORABLE =
+  "Es optativo para el sector privado: depende de tu empleador.";
+
 export function analizarFeriados(feriados: Feriado[], todayISO: string): AnalisisFeriados {
   const feriadosOrdenados = [...feriados].sort((a, b) => a.fecha.localeCompare(b.fecha));
   const feriadoDeHoy = feriadosOrdenados.find((f) => f.fecha === todayISO) ?? null;

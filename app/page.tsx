@@ -1,7 +1,13 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { siteConfig } from "@/lib/site-config";
-import { FeriadosFetchError, analizarHoy, getArgentinaTodayISO } from "@/lib/feriados";
+import {
+  ACLARACION_NO_LABORABLE,
+  FeriadosFetchError,
+  analizarHoy,
+  getArgentinaTodayISO,
+  respuestaDeHoy,
+} from "@/lib/feriados";
 import { RespuestaFeriado } from "@/components/RespuestaFeriado";
 import { ListaFeriados } from "@/components/ListaFeriados";
 
@@ -49,7 +55,9 @@ export default async function Home() {
           acceptedAnswer: {
             "@type": "Answer",
             text: analisis.feriadoDeHoy
-              ? `Sí, hoy es ${analisis.feriadoDeHoy.nombre}.`
+              ? respuestaDeHoy(analisis) === "no-laborable"
+                ? `Hoy es día no laborable: ${analisis.feriadoDeHoy.nombre}. ${ACLARACION_NO_LABORABLE}`
+                : `Sí, hoy es ${analisis.feriadoDeHoy.nombre}.`
               : analisis.proximoFeriado
               ? `No. Faltan ${analisis.diasHastaProximo} días para el próximo feriado: ${analisis.proximoFeriado.nombre}.`
               : "No hay más feriados cargados por ahora.",
