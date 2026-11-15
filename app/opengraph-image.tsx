@@ -1,24 +1,20 @@
 import { ImageResponse } from "next/og";
-import {
-  FeriadosFetchError,
-  analizarFeriados,
-  getArgentinaTodayISO,
-  getFeriadosDelPeriodoActual,
-} from "@/lib/feriados";
+import { connection } from "next/server";
+import { FeriadosFetchError, analizarHoy } from "@/lib/feriados";
 
 export const alt = "¿Hoy es feriado en Argentina?";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 export default async function Image() {
-  const todayISO = getArgentinaTodayISO();
+  // Igual que la página: la imagen se arma por request para que "hoy" sea hoy.
+  await connection();
 
   let esFeriado = false;
   let subtitulo = "";
 
   try {
-    const feriados = await getFeriadosDelPeriodoActual();
-    const analisis = analizarFeriados(feriados, todayISO);
+    const analisis = await analizarHoy();
     esFeriado = Boolean(analisis.feriadoDeHoy);
 
     if (analisis.feriadoDeHoy) {

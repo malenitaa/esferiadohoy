@@ -1,15 +1,12 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import { siteConfig } from "@/lib/site-config";
-import {
-  FeriadosFetchError,
-  analizarFeriados,
-  getArgentinaTodayISO,
-  getFeriadosDelPeriodoActual,
-} from "@/lib/feriados";
+import { FeriadosFetchError, analizarHoy, getArgentinaTodayISO } from "@/lib/feriados";
 import { RespuestaFeriado } from "@/components/RespuestaFeriado";
 import { ListaFeriados } from "@/components/ListaFeriados";
 
 export async function generateMetadata(): Promise<Metadata> {
+  await connection();
   const year = getArgentinaTodayISO().slice(0, 4);
   const title = `¿Hoy es feriado en Argentina? Feriados ${year}`;
   const description = `¿Hoy es feriado o día no laborable en Argentina? Enterate al instante, mirá cuánto falta para el próximo feriado y consultá el calendario completo de feriados Argentina ${year}.`;
@@ -24,14 +21,15 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Home() {
-  const todayISO = getArgentinaTodayISO();
+  // Sin esto Next prerenderiza la página y "hoy" queda fijo en el día en que se generó.
+  // El fetch de feriados sigue cacheado 24 h por su propio revalidate.
+  await connection();
 
   let analisis;
   let errorMessage: string | null = null;
 
   try {
-    const feriados = await getFeriadosDelPeriodoActual();
-    analisis = analizarFeriados(feriados, todayISO);
+    analisis = await analizarHoy();
   } catch (error) {
     errorMessage =
       error instanceof FeriadosFetchError
