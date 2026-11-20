@@ -50,6 +50,20 @@ describe("página principal", () => {
     );
   });
 
+  it("el JSON-LD marca como día no laborable un próximo que es puente", async () => {
+    const feriados: Feriado[] = [
+      { fecha: "2026-11-16", tipo: "puente", nombre: "Puente turístico" },
+      { fecha: "2026-11-23", tipo: "trasladable", nombre: "Soberanía Nacional" },
+    ];
+    vi.stubGlobal("fetch", async () => Response.json(feriados));
+
+    const data = JSON.parse(jsonLd(await renderHome()) ?? "null");
+
+    expect(data.mainEntity.acceptedAnswer.text).toBe(
+      "No. Faltan 1 día para el próximo día no laborable: Puente turístico. Es optativo para el sector privado: depende de tu empleador."
+    );
+  });
+
   it("el JSON-LD escapa un nombre con </script> y no cierra el bloque", async () => {
     const malicioso = 'X</script><script>alert(1)</script>"&';
     const feriados: Feriado[] = [{ fecha: "2026-11-15", tipo: "inamovible", nombre: malicioso }];

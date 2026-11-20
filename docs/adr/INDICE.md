@@ -9,3 +9,4 @@
 | [0005](0005-deploy-desde-main.md) | Producción se deploya desde `main` | 15/11/2026 |
 | [0006](0006-datos-de-la-fuente.md) | Cómo se trata lo que manda ArgentinaDatos | 15/11/2026 |
 | [0007](0007-cache-cdn-hasta-medianoche.md) | La CDN cachea hasta la medianoche argentina | 15/11/2026 |
+| [0008](0008-proximo-cuenta-puentes.md) | "Próximo feriado" cuenta los puentes y los marca | 20/11/2026 |

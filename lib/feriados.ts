@@ -194,6 +194,14 @@ export function respuestaDeHoy({ feriadoDeHoy }: Pick<AnalisisFeriados, "feriado
 export const ACLARACION_NO_LABORABLE =
   "Es optativo para el sector privado: depende de tu empleador.";
 
+/**
+ * Cómo se nombra el próximo en "Faltan N días para…". Los puentes se cuentan igual (cada quien
+ * decide si se toma el día), pero se marcan como día no laborable (ADR-0008).
+ */
+export function nombreDelProximo(feriado: Feriado): string {
+  return feriado.tipo === "puente" ? "el próximo día no laborable" : "el próximo feriado";
+}
+
 export function analizarFeriados(feriados: Feriado[], todayISO: string): AnalisisFeriados {
   const feriadosOrdenados = [...feriados].sort((a, b) => a.fecha.localeCompare(b.fecha));
   // Si un feriado y un puente cayeran el mismo día, gana el feriado: es la respuesta más fuerte.

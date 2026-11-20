@@ -1,4 +1,9 @@
-import { ACLARACION_NO_LABORABLE, respuestaDeHoy, type AnalisisFeriados } from "@/lib/feriados";
+import {
+  ACLARACION_NO_LABORABLE,
+  nombreDelProximo,
+  respuestaDeHoy,
+  type AnalisisFeriados,
+} from "@/lib/feriados";
 
 const TEXTO = { si: "SÍ", no: "NO", "no-laborable": "NO LABORABLE" } as const;
 
@@ -41,11 +46,16 @@ export function RespuestaFeriado({ analisis }: { analisis: AnalisisFeriados }) {
           <span className="font-semibold">
             {diasHastaProximo} {diasHastaProximo === 1 ? "día" : "días"}
           </span>{" "}
-          para el próximo feriado:{" "}
+          para {nombreDelProximo(proximoFeriado)}:{" "}
           <span className="font-semibold">{proximoFeriado.nombre}</span>
           <span className="block text-base text-neutral-400 dark:text-neutral-500">
             {formatearFecha(proximoFeriado.fecha)}
           </span>
+          {proximoFeriado.tipo === "puente" ? (
+            <span className="mt-1 block text-base text-neutral-400 dark:text-neutral-500">
+              {ACLARACION_NO_LABORABLE}
+            </span>
+          ) : null}
         </p>
       ) : (
         <p className="break-words text-xl text-neutral-600 dark:text-neutral-300 sm:text-2xl">

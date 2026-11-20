@@ -36,10 +36,19 @@ describe("RespuestaFeriado", () => {
   it("dado un día común, cuando se abre la página, entonces dice NO y cuánto falta para el próximo", () => {
     const html = render("2026-12-05");
     expect(html).toContain(">NO<");
-    expect(html).toMatch(/Faltan[\s\S]*2[\s\S]*días[\s\S]*para el próximo feriado/);
-    // El próximo es el puente del 07/12: "próximo feriado" todavía cuenta los puentes.
+    // El próximo es el puente del 07/12: se cuenta, pero se marca como día no laborable (ADR-0008).
+    expect(html).toMatch(/Faltan[\s\S]*2[\s\S]*días[\s\S]*para el próximo día no laborable/);
+    expect(html).not.toContain("para el próximo feriado");
     expect(html).toContain("Día no laborable con fines turísticos");
     expect(html).toContain("7 de diciembre");
+    expect(html).toContain("optativo para el sector privado");
+  });
+
+  it("dado que el próximo es un feriado, entonces dice próximo feriado, sin la aclaración", () => {
+    const html = render("2026-11-20");
+    expect(html).toContain("para el próximo feriado");
+    expect(html).not.toContain("no laborable");
+    expect(html).not.toContain("optativo");
   });
 
   it("dado que el próximo feriado es mañana, entonces dice 1 día, en singular", () => {
