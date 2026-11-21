@@ -5,6 +5,7 @@ import {
   ACLARACION_NO_LABORABLE,
   FeriadosFetchError,
   analizarHoy,
+  faltanDias,
   getArgentinaTodayISO,
   nombreDelProximo,
   respuestaDeHoy,
@@ -60,7 +61,7 @@ export default async function Home() {
                 ? `Hoy es día no laborable: ${analisis.feriadoDeHoy.nombre}. ${ACLARACION_NO_LABORABLE}`
                 : `Sí, hoy es ${analisis.feriadoDeHoy.nombre}.`
               : analisis.proximoFeriado
-              ? `No. Faltan ${analisis.diasHastaProximo} ${analisis.diasHastaProximo === 1 ? "día" : "días"} para ${nombreDelProximo(analisis.proximoFeriado)}: ${analisis.proximoFeriado.nombre}.${analisis.proximoFeriado.tipo === "puente" ? ` ${ACLARACION_NO_LABORABLE}` : ""}`
+              ? `No. ${faltanDias(analisis.diasHastaProximo ?? 0)} para ${nombreDelProximo(analisis.proximoFeriado)}: ${analisis.proximoFeriado.nombre}.${analisis.proximoFeriado.tipo === "puente" ? ` ${ACLARACION_NO_LABORABLE}` : ""}`
               : "No hay más feriados cargados por ahora.",
           },
         },

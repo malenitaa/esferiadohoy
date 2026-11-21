@@ -45,7 +45,7 @@ describe("imagen OG", () => {
   it("falta 1 día: usa singular", async () => {
     vi.setSystemTime(new Date("2026-06-19T12:00:00-03:00"));
     stubApi([{ fecha: "2026-06-20", tipo: "inamovible", nombre: "Belgrano" }]);
-    expect((await og()).join(" ")).toContain("Faltan 1 día para");
+    expect((await og()).join(" ")).toContain("Falta 1 día para");
   });
 
   it("API caída (500): devuelve imagen igual", async () => {

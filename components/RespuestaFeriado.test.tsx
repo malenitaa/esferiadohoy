@@ -54,6 +54,8 @@ describe("RespuestaFeriado", () => {
   it("dado que el próximo feriado es mañana, entonces dice 1 día, en singular", () => {
     const html = render("2026-11-22");
     expect(html).toMatch(/1(<!-- -->)? día</);
+    expect(html).toContain("Falta ");
+    expect(html).not.toContain("Faltan");
   });
 
   it("un feriado sigue diciendo SÍ, sin la aclaración", () => {

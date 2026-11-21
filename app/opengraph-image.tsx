@@ -3,6 +3,7 @@ import { connection } from "next/server";
 import {
   FeriadosFetchError,
   analizarHoy,
+  faltanDias,
   respuestaDeHoy,
   segundosDeCacheHastaMedianoche,
   type RespuestaDeHoy,
@@ -45,8 +46,7 @@ export default async function Image() {
     if (analisis.feriadoDeHoy) {
       subtitulo = analisis.feriadoDeHoy.nombre;
     } else if (analisis.proximoFeriado && analisis.diasHastaProximo !== null) {
-      const dias = analisis.diasHastaProximo;
-      subtitulo = `Faltan ${dias} ${dias === 1 ? "día" : "días"} para ${analisis.proximoFeriado.nombre}`;
+      subtitulo = `${faltanDias(analisis.diasHastaProximo)} para ${analisis.proximoFeriado.nombre}`;
     }
   } catch (error) {
     if (!(error instanceof FeriadosFetchError)) throw error;

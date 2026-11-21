@@ -42,7 +42,7 @@ export function RespuestaFeriado({ analisis }: { analisis: AnalisisFeriados }) {
         </p>
       ) : proximoFeriado && diasHastaProximo !== null ? (
         <p className="break-words text-xl text-neutral-600 dark:text-neutral-300 sm:text-2xl">
-          Faltan{" "}
+          {diasHastaProximo === 1 ? "Falta" : "Faltan"}{" "}
           <span className="font-semibold">
             {diasHastaProximo} {diasHastaProximo === 1 ? "día" : "días"}
           </span>{" "}

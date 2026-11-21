@@ -60,7 +60,7 @@ describe("página principal", () => {
     const data = JSON.parse(jsonLd(await renderHome()) ?? "null");
 
     expect(data.mainEntity.acceptedAnswer.text).toBe(
-      "No. Faltan 1 día para el próximo día no laborable: Puente turístico. Es optativo para el sector privado: depende de tu empleador."
+      "No. Falta 1 día para el próximo día no laborable: Puente turístico. Es optativo para el sector privado: depende de tu empleador."
     );
   });
 

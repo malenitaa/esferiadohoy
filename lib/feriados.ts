@@ -194,6 +194,11 @@ export function respuestaDeHoy({ feriadoDeHoy }: Pick<AnalisisFeriados, "feriado
 export const ACLARACION_NO_LABORABLE =
   "Es optativo para el sector privado: depende de tu empleador.";
 
+/** "Falta 1 día" o "Faltan N días". */
+export function faltanDias(dias: number): string {
+  return dias === 1 ? "Falta 1 día" : `Faltan ${dias} días`;
+}
+
 /**
  * Cómo se nombra el próximo en "Faltan N días para…". Los puentes se cuentan igual (cada quien
  * decide si se toma el día), pero se marcan como día no laborable (ADR-0008).
